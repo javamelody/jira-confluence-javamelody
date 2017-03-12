@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>net.bull.javamelody</groupId>
+	<artifactId>jira-confluence-javamelody</artifactId>
+	<version>1.64.0</version>
+	<packaging>jar</packaging>
+
+	<name>JIRA Confluence Bamboo JavaMelody Plugin</name>
+	<description>JavaMelody Monitoring in JIRA, Confluence or Bamboo.</description>
+	<url>https://github.com/javamelody/javamelody/wiki</url>
+	<inceptionYear>2008</inceptionYear>
+	<prerequisites>
+		<maven>3.0.4</maven>
+	</prerequisites>
+
+	<developers>
+		<developer>
+			<id>evernat</id>
+			<email>evernat@free.fr</email>
+			<name>Emeric Vernat</name>
+		</developer>
+	</developers>
+	<organization>
+		<name>Emeric Vernat</name>
+		<url>https://github.com/javamelody/javamelody/wiki</url>
+	</organization>
+	<licenses>
+		<license>
+			<name>ASL</name>
+			<url>LICENSE</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<scm>
+		<connection>scm:git:git@github.com:javamelody/jira-confluence-javamelody.git</connection>
+		<developerConnection>scm:git:git@github.com:javamelody/jira-confluence-javamelody.git</developerConnection>
+		<url>https://github.com/javamelody/jira-confluence-javamelody</url>
+		<tag>HEAD</tag>
+	</scm>
+	<issueManagement>
+		<system>GITHUB</system>
+		<url>https://github.com/javamelody/jira-confluence-javamelody/issues</url>
+	</issueManagement>
+	<ciManagement>
+		<system>Cloudbees</system>
+		<url>http://javamelody.ci.cloudbees.com/job/jira-confluence-javamelody</url>
+	</ciManagement>
+
+	<properties>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>net.bull.javamelody</groupId>
+			<artifactId>javamelody-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.lowagie</groupId>
+			<artifactId>itext</artifactId>
+			<version>2.1.7</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>bcmail-jdk14</artifactId>
+					<groupId>bouncycastle</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>bcprov-jdk14</artifactId>
+					<groupId>bouncycastle</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>bctsp-jdk14</artifactId>
+					<groupId>bouncycastle</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>3.0.1</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.0.2</version>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Implementation-Title>${project.name}</Implementation-Title>
+							<Implementation-Version>${project.version}</Implementation-Version>
+							<Implementation-Vendor>Emeric Vernat</Implementation-Vendor>
+							<!-- Override user.name in Built-By -->
+							<Built-By>Emeric Vernat</Built-By>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+									<resource>META-INF/web-fragment.xml</resource>
+								</transformer>
+							</transformers>
+							<relocations>
+								<relocation>
+									<pattern>META-INF/maven</pattern>
+									<shadedPattern>META-INF/shade/maven</shadedPattern>
+									<excludes>
+										<exclude>META-INF/maven/${project.groupId}/${project.artifactId}/pom.*</exclude>
+									</excludes>
+								</relocation>
+							</relocations>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>
