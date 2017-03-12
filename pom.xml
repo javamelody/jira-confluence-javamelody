@@ -86,6 +86,22 @@
 			<version>3.0.1</version>
 			<scope>provided</scope>
 		</dependency>
+		<!-- Dépendance JUnit -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.11</version>
+			<!-- Utilisée uniquement pour l'exécution des tests unitaires -->
+			<scope>test</scope>
+		</dependency>
+		<!-- Dépendance EasyMock -->
+		<dependency>
+			<groupId>org.easymock</groupId>
+			<artifactId>easymock</artifactId>
+			<version>3.1</version>
+			<!-- Utilisée uniquement pour l'exécution des tests unitaires -->
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
