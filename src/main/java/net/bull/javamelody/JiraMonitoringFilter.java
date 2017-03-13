@@ -93,6 +93,13 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			LOG.debug("Authentication for monitoring reports has been disabled");
 		}
 
+		// add atlassian maven public repository for atlassian sources
+		final String mavenRepositories = System.getProperty("user.home")
+				+ "/.m2/repository,http://repo1.maven.org/maven2,https://maven.atlassian.com/content/repositories/public/";
+		System.setProperty(
+				Parameters.PARAMETER_SYSTEM_PREFIX + Parameter.MAVEN_REPOSITORIES.getCode(),
+				mavenRepositories);
+
 		final String analyticsDisabled = "javamelody.analytics-disabled";
 		if (System.getProperty(analyticsDisabled) != null
 				|| config.getServletContext().getInitParameter(analyticsDisabled) != null) {
