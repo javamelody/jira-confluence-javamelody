@@ -59,10 +59,12 @@
 
 	<resource type="i18n" name="i18n" location="javamelody_i18n" />
 
-	<!-- doc: http://confluence.atlassian.com/display/JIRA/Web+Fragments -->
-	<!-- section for issue 342: RuntimeException in logs since JIRA v6.0.8 -->
+	<!-- doc: https://developer.atlassian.com/jiradev/jira-platform/jira-architecture/web-fragments -->
+	<!-- section was "admin_plugins_menu/monitoring_section" for issue 342: RuntimeException in logs since JIRA v6.0.8 -->
+	<!-- but now is "top_system_section/troubleshooting_and_support" section to display the link in the System menu since JIRA v7.?
+		(look for the link in the Add-ons menu otherwise) -->
 	<web-item key="net.bull.javamelody.jira-web-item" name="Monitoring"
-		section="admin_plugins_menu/monitoring_section" i18n-name-key="net.bull.javamelody.web-item"
+		section="top_system_section/troubleshooting_and_support" i18n-name-key="net.bull.javamelody.web-item"
 		weight="10">
 		<!-- issue 210 (jira-web-item error in logs): remove this icon element because icon is not displayed
 		in JIRA 5 and because it causes an ERROR log for some screens such as project config.
