@@ -38,8 +38,8 @@ import javax.servlet.http.HttpSession;
  * @author Emeric Vernat
  */
 public class JiraMonitoringFilter extends PluginMonitoringFilter {
-	private static final boolean PLUGIN_AUTHENTICATION_DISABLED = Boolean
-			.parseBoolean(System.getProperty("javamelody.plugin-authentication-disabled"));
+	private static final boolean PLUGIN_AUTHENTICATION_DISABLED = Parameter.PLUGIN_AUTHENTICATION_DISABLED
+			.getValueAsBoolean();
 	// valeur de com.atlassian.jira.security.Permissions.SYSTEM_ADMIN
 	private static final int SYSTEM_ADMIN = 44;
 	// valeur de DefaultAuthenticator.LOGGED_IN_KEY
