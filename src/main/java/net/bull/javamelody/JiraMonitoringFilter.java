@@ -81,25 +81,23 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		super.init(config);
 
 		if (jira) {
-			LOG.debug("JavaMelody is monitoring JIRA");
+			logForDebug("JavaMelody is monitoring JIRA");
 		} else if (confluence) {
-			LOG.debug("JavaMelody is monitoring Confluence");
+			logForDebug("JavaMelody is monitoring Confluence");
 		} else if (bamboo) {
-			LOG.debug("JavaMelody is monitoring Bamboo");
+			logForDebug("JavaMelody is monitoring Bamboo");
 		} else {
-			LOG.debug(
+			logForDebug(
 					"JavaMelody is monitoring unknown, access to monitoring reports is not secured by JavaMelody");
 		}
 		if (PLUGIN_AUTHENTICATION_DISABLED) {
-			LOG.debug("Authentication for monitoring reports has been disabled");
+			logForDebug("Authentication for monitoring reports has been disabled");
 		}
 
 		// add atlassian maven public repository for atlassian sources
 		final String mavenRepositories = System.getProperty("user.home")
 				+ "/.m2/repository,http://repo1.maven.org/maven2,https://maven.atlassian.com/content/repositories/public/";
-		System.setProperty(
-				Parameters.PARAMETER_SYSTEM_PREFIX + Parameter.MAVEN_REPOSITORIES.getCode(),
-				mavenRepositories);
+		Parameter.MAVEN_REPOSITORIES.setValue(mavenRepositories);
 
 		final String analyticsDisabled = "javamelody.analytics-disabled";
 		if (System.getProperty(analyticsDisabled) != null
@@ -136,8 +134,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 
 	private void putRemoteUserInSession(HttpServletRequest httpRequest) {
 		final HttpSession session = httpRequest.getSession(false);
-		if (session != null
-				&& session.getAttribute(SessionInformations.SESSION_REMOTE_USER) == null) {
+		if (session != null && session.getAttribute(SessionListener.SESSION_REMOTE_USER) == null) {
 			// si session null, la session n'est pas encore créée (et ne le sera
 			// peut-être jamais),
 			try {
@@ -145,7 +142,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 				// objet utilisateur, peut être null
 				if (user instanceof Principal) {
 					final String remoteUser = ((Principal) user).getName();
-					session.setAttribute(SessionInformations.SESSION_REMOTE_USER, remoteUser);
+					session.setAttribute(SessionListener.SESSION_REMOTE_USER, remoteUser);
 				}
 			} catch (final Exception e) {
 				// tant pis
