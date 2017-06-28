@@ -34,7 +34,6 @@ import javax.servlet.http.HttpSession;
 /**
  * Filter of monitoring JavaMelody for JIRA/Bamboo/Confluence with security
  * check for system administrator.
- * 
  * @author Emeric Vernat
  */
 public class JiraMonitoringFilter extends PluginMonitoringFilter {
