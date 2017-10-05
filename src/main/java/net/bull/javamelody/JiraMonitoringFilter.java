@@ -58,6 +58,8 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 	private final boolean confluence = isConfluence();
 	private final boolean bamboo = isBamboo();
 
+	private final boolean jiraHasProperApplicationUserSupport = jira && hasJirasPermissionManagerApplicationUserSupport();
+
 	private boolean confluenceGetUserByNameExists = true; // on suppose true au
 															// départ
 
@@ -223,7 +225,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		return true;
 	}
 
-	private static boolean hasJiraSystemAdminPermission(Object user) {
+	private boolean hasJiraSystemAdminPermission(Object user) {
 		try {
 			final Class<?> componentAccessorClass = Class
 					.forName("com.atlassian.jira.component.ComponentAccessor");
@@ -235,25 +237,43 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			// (Since v6.2.5)
 			final Object permissionManager = componentAccessorClass
 					.getMethod("getPermissionManager").invoke(null);
-			Exception firstException = null;
-			// selon la version de JIRA, on essaye les différentes classes
-			// possibles du user
-			for (final String className : JIRA_USER_CLASSES) {
-				try {
-					final Class<?> userClass = Class.forName(className);
-					final Boolean result = (Boolean) permissionManager.getClass()
-							.getMethod("hasPermission", Integer.TYPE, userClass)
-							.invoke(permissionManager, SYSTEM_ADMIN, user);
-					return result;
-				} catch (final Exception e) {
-					if (firstException == null) {
-						firstException = e;
-					}
-					continue;
-				}
+
+			// "user" may not be of the correct class, e.g. when a custom authenticator sets a Principal
+			// which is NOT an ApplicationUser.
+			// for JIRA 6+, convert it to an ApplicationUser
+			if (user instanceof Principal && jiraHasProperApplicationUserSupport) {
+				final Object userManager = componentAccessorClass
+						.getMethod("getUserManager").invoke(null);
+				final String userName = ((Principal) user).getName();
+				final Object applicationUser = userManager.getClass()
+						.getMethod("getUserByName", String.class)
+						.invoke(userManager, userName);
+
+				final Class<?> applicationUserClass = Class.forName("com.atlassian.jira.user.ApplicationUser");
+				return (Boolean) permissionManager.getClass()
+						.getMethod("hasPermission", Integer.TYPE, applicationUserClass)
+						.invoke(permissionManager, SYSTEM_ADMIN, applicationUser);
 			}
-			// aucune classe n'a fonctionné
-			throw firstException;
+			// otherwise try known user classes
+			else {
+				Exception firstException = null;
+				// selon la version de JIRA, on essaye les différentes classes
+				// possibles du user
+				for (final String className : JIRA_USER_CLASSES) {
+					try {
+						final Class<?> userClass = Class.forName(className);
+						return (Boolean) permissionManager.getClass()
+								.getMethod("hasPermission", Integer.TYPE, userClass)
+								.invoke(permissionManager, SYSTEM_ADMIN, user);
+					} catch (final Exception e) {
+						if (firstException == null) {
+							firstException = e;
+						}
+					}
+				}
+				// aucune classe n'a fonctionné
+				throw firstException;
+			}
 		} catch (final Exception e) {
 			throw new IllegalStateException(e);
 		}
@@ -261,6 +281,26 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		// &&
 		// com.atlassian.jira.component.ComponentAccessor.getPermissionManager().hasPermission(
 		// SYSTEM_ADMIN, (com.opensymphony.user.User) user);
+	}
+
+	private static boolean hasJirasPermissionManagerApplicationUserSupport() {
+		try {
+			final Class<?> componentAccessorClass = Class
+					.forName("com.atlassian.jira.component.ComponentAccessor");
+			final Object permissionManager = componentAccessorClass
+					.getMethod("getPermissionManager").invoke(null);
+			try {
+				// since JIRA 5.1.1
+				final Class<?> applicationUserClass = Class.forName("com.atlassian.jira.user.ApplicationUser");
+				// since JIRA 6.0
+				permissionManager.getClass().getMethod("hasPermission", Integer.TYPE, applicationUserClass);
+				return true;
+			} catch (final Exception e) {
+				return false;
+			}
+		} catch (final Exception e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	private static boolean hasConfluenceAdminPermission(Object user) {
