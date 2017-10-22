@@ -241,7 +241,8 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			// "user" may not be of the correct class, e.g. when a custom authenticator sets a Principal
 			// which is NOT an ApplicationUser.
 			// for JIRA 6+, convert it to an ApplicationUser
-			if (user instanceof Principal && jiraHasProperApplicationUserSupport) {
+			if (user instanceof Principal && jiraHasProperApplicationUserSupport 
+					&& !Class.forName("com.atlassian.jira.user.ApplicationUser").isInstance(user)) {
 				final Object userManager = componentAccessorClass
 						.getMethod("getUserManager").invoke(null);
 				final String userName = ((Principal) user).getName();
@@ -299,7 +300,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 				return false;
 			}
 		} catch (final Exception e) {
-			throw new IllegalStateException(e);
+			return false;
 		}
 	}
 
