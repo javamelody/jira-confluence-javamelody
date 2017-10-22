@@ -241,7 +241,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			// "user" may not be of the correct class, e.g. when a custom authenticator sets a Principal
 			// which is NOT an ApplicationUser.
 			// for JIRA 6+, convert it to an ApplicationUser
-			if (user instanceof Principal && jiraHasProperApplicationUserSupport 
+			if (jiraHasProperApplicationUserSupport && user instanceof Principal
 					&& !Class.forName("com.atlassian.jira.user.ApplicationUser").isInstance(user)) {
 				final Object userManager = componentAccessorClass
 						.getMethod("getUserManager").invoke(null);
@@ -256,25 +256,23 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 						.invoke(permissionManager, SYSTEM_ADMIN, applicationUser);
 			}
 			// otherwise try known user classes
-			else {
-				Exception firstException = null;
-				// selon la version de JIRA, on essaye les différentes classes
-				// possibles du user
-				for (final String className : JIRA_USER_CLASSES) {
-					try {
-						final Class<?> userClass = Class.forName(className);
-						return (Boolean) permissionManager.getClass()
-								.getMethod("hasPermission", Integer.TYPE, userClass)
-								.invoke(permissionManager, SYSTEM_ADMIN, user);
-					} catch (final Exception e) {
-						if (firstException == null) {
-							firstException = e;
-						}
+			Exception firstException = null;
+			// selon la version de JIRA, on essaye les différentes classes
+			// possibles du user
+			for (final String className : JIRA_USER_CLASSES) {
+				try {
+					final Class<?> userClass = Class.forName(className);
+					return (Boolean) permissionManager.getClass()
+							.getMethod("hasPermission", Integer.TYPE, userClass)
+							.invoke(permissionManager, SYSTEM_ADMIN, user);
+				} catch (final Exception e) {
+					if (firstException == null) {
+						firstException = e;
 					}
 				}
-				// aucune classe n'a fonctionné
-				throw firstException;
 			}
+			// aucune classe n'a fonctionné
+			throw firstException;
 		} catch (final Exception e) {
 			throw new IllegalStateException(e);
 		}
@@ -290,15 +288,11 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 					.forName("com.atlassian.jira.component.ComponentAccessor");
 			final Object permissionManager = componentAccessorClass
 					.getMethod("getPermissionManager").invoke(null);
-			try {
-				// since JIRA 5.1.1
-				final Class<?> applicationUserClass = Class.forName("com.atlassian.jira.user.ApplicationUser");
-				// since JIRA 6.0
-				permissionManager.getClass().getMethod("hasPermission", Integer.TYPE, applicationUserClass);
-				return true;
-			} catch (final Exception e) {
-				return false;
-			}
+			// since JIRA 5.1.1
+			final Class<?> applicationUserClass = Class.forName("com.atlassian.jira.user.ApplicationUser");
+			// since JIRA 6.0
+			permissionManager.getClass().getMethod("hasPermission", Integer.TYPE, applicationUserClass);
+			return true;
 		} catch (final Exception e) {
 			return false;
 		}
