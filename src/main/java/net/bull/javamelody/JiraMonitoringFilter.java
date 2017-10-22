@@ -58,7 +58,8 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 	private final boolean confluence = isConfluence();
 	private final boolean bamboo = isBamboo();
 
-	private final boolean jiraHasProperApplicationUserSupport = jira && hasJirasPermissionManagerApplicationUserSupport();
+	private final boolean jiraHasProperApplicationUserSupport = jira
+			&& hasJirasPermissionManagerApplicationUserSupport();
 
 	private boolean confluenceGetUserByNameExists = true; // on suppose true au
 															// départ
@@ -243,14 +244,14 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			// for JIRA 6+, convert it to an ApplicationUser
 			if (jiraHasProperApplicationUserSupport && user instanceof Principal
 					&& !Class.forName("com.atlassian.jira.user.ApplicationUser").isInstance(user)) {
-				final Object userManager = componentAccessorClass
-						.getMethod("getUserManager").invoke(null);
+				final Object userManager = componentAccessorClass.getMethod("getUserManager")
+						.invoke(null);
 				final String userName = ((Principal) user).getName();
 				final Object applicationUser = userManager.getClass()
-						.getMethod("getUserByName", String.class)
-						.invoke(userManager, userName);
+						.getMethod("getUserByName", String.class).invoke(userManager, userName);
 
-				final Class<?> applicationUserClass = Class.forName("com.atlassian.jira.user.ApplicationUser");
+				final Class<?> applicationUserClass = Class
+						.forName("com.atlassian.jira.user.ApplicationUser");
 				return (Boolean) permissionManager.getClass()
 						.getMethod("hasPermission", Integer.TYPE, applicationUserClass)
 						.invoke(permissionManager, SYSTEM_ADMIN, applicationUser);
@@ -289,9 +290,11 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			final Object permissionManager = componentAccessorClass
 					.getMethod("getPermissionManager").invoke(null);
 			// since JIRA 5.1.1
-			final Class<?> applicationUserClass = Class.forName("com.atlassian.jira.user.ApplicationUser");
+			final Class<?> applicationUserClass = Class
+					.forName("com.atlassian.jira.user.ApplicationUser");
 			// since JIRA 6.0
-			permissionManager.getClass().getMethod("hasPermission", Integer.TYPE, applicationUserClass);
+			permissionManager.getClass().getMethod("hasPermission", Integer.TYPE,
+					applicationUserClass);
 			return true;
 		} catch (final Exception e) {
 			return false;
