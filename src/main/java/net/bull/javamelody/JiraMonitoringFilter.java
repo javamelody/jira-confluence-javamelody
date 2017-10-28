@@ -334,13 +334,20 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			final Object bambooPermissionManager = containerManagerClass
 					.getMethod("getComponent", String.class)
 					.invoke(null, "bambooPermissionManager");
+			final String userName;
+			if (user instanceof Principal) {
+				// for Bamboo 6+ (issue 671)
+				userName = ((Principal) user).getName();
+			} else {
+				userName = user.toString();
+			}
 
 			Boolean result;
 			try {
 				// since Bamboo 3.1 (issue 192):
 				result = (Boolean) bambooPermissionManager.getClass()
 						.getMethod("isSystemAdmin", String.class)
-						.invoke(bambooPermissionManager, user.toString());
+						.invoke(bambooPermissionManager, userName);
 			} catch (final NoSuchMethodException e) {
 				// before Bamboo 3.1 (issue 192):
 				final Class<?> globalApplicationSecureObjectClass = Class
@@ -349,7 +356,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 						.getField("INSTANCE").get(null);
 				result = (Boolean) bambooPermissionManager.getClass()
 						.getMethod("hasPermission", String.class, String.class, Object.class)
-						.invoke(bambooPermissionManager, user.toString(), "ADMIN",
+						.invoke(bambooPermissionManager, userName, "ADMIN",
 								globalApplicationSecureObject);
 			}
 			return result;
