@@ -239,24 +239,6 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			final Object permissionManager = componentAccessorClass
 					.getMethod("getPermissionManager").invoke(null);
 
-			// "user" may not be of the correct class, e.g. when a custom authenticator sets a Principal
-			// which is NOT an ApplicationUser.
-			// for JIRA 6+, convert it to an ApplicationUser
-			if (jiraHasProperApplicationUserSupport && user instanceof Principal
-					&& !Class.forName("com.atlassian.jira.user.ApplicationUser").isInstance(user)) {
-				final Object userManager = componentAccessorClass.getMethod("getUserManager")
-						.invoke(null);
-				final String userName = ((Principal) user).getName();
-				final Object applicationUser = userManager.getClass()
-						.getMethod("getUserByName", String.class).invoke(userManager, userName);
-
-				final Class<?> applicationUserClass = Class
-						.forName("com.atlassian.jira.user.ApplicationUser");
-				return (Boolean) permissionManager.getClass()
-						.getMethod("hasPermission", Integer.TYPE, applicationUserClass)
-						.invoke(permissionManager, SYSTEM_ADMIN, applicationUser);
-			}
-			// otherwise try known user classes
 			Exception firstException = null;
 			// selon la version de JIRA, on essaye les différentes classes
 			// possibles du user
@@ -380,27 +362,23 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		if (session == null) {
 			return null;
 		}
-		Object result = session.getAttribute(LOGGED_IN_KEY);
-		if (confluence) {
-			if (result != null && "com.atlassian.confluence.user.SessionSafePrincipal"
-					.equals(result.getClass().getName())) {
-				// since confluence 4.1.4 (or 4.1.?)
-				final String userName = result.toString();
-				// note: httpRequest.getRemoteUser() null in general
-				try {
+		Object user = session.getAttribute(LOGGED_IN_KEY);
+		try {
+			if (confluence) {
+				if (user != null && "com.atlassian.confluence.user.SessionSafePrincipal"
+						.equals(user.getClass().getName())) {
+					// since confluence 4.1.4 (or 4.1.?)
+					final String userName = user.toString();
+					// note: httpRequest.getRemoteUser() null in general
 					final Class<?> containerManagerClass = Class
 							.forName("com.atlassian.spring.container.ContainerManager");
 					final Object userAccessor = containerManagerClass
 							.getMethod("getComponent", String.class).invoke(null, "userAccessor");
-					result = userAccessor.getClass().getMethod("getUser", String.class)
+					user = userAccessor.getClass().getMethod("getUser", String.class)
 							.invoke(userAccessor, userName);
-				} catch (final Exception e) {
-					throw new IllegalStateException(e);
-				}
-			} else if (result instanceof Principal && confluenceGetUserByNameExists) {
-				// since confluence 5.2 or 5.3
-				final String userName = ((Principal) result).getName();
-				try {
+				} else if (user instanceof Principal && confluenceGetUserByNameExists) {
+					// since confluence 5.2 or 5.3
+					final String userName = ((Principal) user).getName();
 					final Class<?> containerManagerClass = Class
 							.forName("com.atlassian.spring.container.ContainerManager");
 					final Object userAccessor = containerManagerClass
@@ -408,19 +386,31 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 					// getUser deprecated, use getUserByName as said in:
 					// https://docs.atlassian.com/atlassian-confluence/5.3.1/com/atlassian/confluence/user/UserAccessor.html
 					try {
-						result = userAccessor.getClass().getMethod("getUserByName", String.class)
+						user = userAccessor.getClass().getMethod("getUserByName", String.class)
 								.invoke(userAccessor, userName);
 					} catch (final NoSuchMethodException e) {
 						// getUserByName does not exist in old Confluence
 						// versions (3.5.13 for example)
 						confluenceGetUserByNameExists = false;
 					}
-				} catch (final Exception e) {
-					throw new IllegalStateException(e);
 				}
+			} else if (jiraHasProperApplicationUserSupport && user instanceof Principal
+					&& !Class.forName("com.atlassian.jira.user.ApplicationUser").isInstance(user)) {
+				// "user" may not be of the correct class, e.g. when a custom authenticator sets a Principal
+				// which is NOT an ApplicationUser.
+				// for JIRA 6+, convert it to an ApplicationUser (PR #2)
+				final Class<?> componentAccessorClass = Class
+						.forName("com.atlassian.jira.component.ComponentAccessor");
+				final Object userManager = componentAccessorClass.getMethod("getUserManager")
+						.invoke(null);
+				final String userName = ((Principal) user).getName();
+				user = userManager.getClass().getMethod("getUserByName", String.class)
+						.invoke(userManager, userName);
 			}
+		} catch (final Exception e) {
+			throw new IllegalStateException(e);
 		}
-		return result;
+		return user;
 	}
 
 	private static boolean isJira() {
