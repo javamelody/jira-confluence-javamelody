@@ -5,7 +5,7 @@
 
 	<groupId>net.bull.javamelody</groupId>
 	<artifactId>jira-confluence-javamelody</artifactId>
-	<version>1.70.0</version>
+	<version>1.71.0</version>
 	<packaging>jar</packaging>
 
 	<name>JIRA Confluence Bamboo JavaMelody Plugin</name>
