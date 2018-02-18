@@ -415,10 +415,15 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 
 	private static boolean isJira() {
 		try {
-			Class.forName("com.atlassian.jira.ManagerFactory");
+			Class.forName("com.atlassian.jira.component.ComponentAccessor");
 			return true;
 		} catch (final ClassNotFoundException e) {
-			return false;
+			try {
+				Class.forName("com.atlassian.jira.ManagerFactory");
+				return true;
+			} catch (final ClassNotFoundException e2) {
+				return false;
+			}
 		}
 	}
 
