@@ -24,3 +24,4 @@ Compiling and Installing the plugin:
  - Compile the code and generate the jar:
 	-> run "mvn clean install" command in your terminal
  - Use the jar file as said in [this page](https://github.com/javamelody/javamelody/wiki/AtlassianPlugin)
+
