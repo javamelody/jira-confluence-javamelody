@@ -98,7 +98,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 
 		// add atlassian maven public repository for atlassian sources
 		final String mavenRepositories = System.getProperty("user.home")
-				+ "/.m2/repository,http://repo1.maven.org/maven2,https://maven.atlassian.com/content/repositories/public/";
+				+ "/.m2/repository,http://repo1.maven.org/maven2,https://maven.atlassian.com/maven-public";
 		Parameter.MAVEN_REPOSITORIES.setValue(mavenRepositories);
 
 		final String analyticsDisabled = "javamelody.analytics-disabled";
