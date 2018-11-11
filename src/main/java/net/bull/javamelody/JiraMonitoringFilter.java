@@ -52,8 +52,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			"com.opensymphony.user.User");
 
 	// initialisation ici et non dans la méthode init, car on ne sait pas très
-	// bien
-	// quand la méthode init serait appelée dans les systèmes de plugins
+	// bien quand la méthode init serait appelée dans les systèmes de plugins
 	private final boolean jira = isJira();
 	private final boolean confluence = isConfluence();
 	private final boolean bamboo = isBamboo();
@@ -61,8 +60,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 	private final boolean jiraHasProperApplicationUserSupport = jira
 			&& hasJirasPermissionManagerApplicationUserSupport();
 
-	private boolean confluenceGetUserByNameExists = true; // on suppose true au
-															// départ
+	private boolean confluenceGetUserByNameExists = true; // on suppose true au départ
 
 	/** {@inheritDoc} */
 	@Override
@@ -189,8 +187,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		final Object user = getUser(httpRequest);
 		if (user == null) {
 			// si non authentifié, on redirige vers la page de login en
-			// indiquant la page
-			// d'origine (sans le contexte) à afficher après le login
+			// indiquant la page d'origine (sans le contexte) à afficher après le login
 			final String destination = getMonitoringUrl(httpRequest)
 					.substring(httpRequest.getContextPath().length());
 			httpResponse.sendRedirect("login.action?os_destination=" + destination);
@@ -211,8 +208,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		final Object user = getUser(httpRequest);
 		if (user == null) {
 			// si non authentifié, on redirige vers la page de login en
-			// indiquant la page
-			// d'origine (sans le contexte) à afficher après le login
+			// indiquant la page d'origine (sans le contexte) à afficher après le login
 			final String destination = getMonitoringUrl(httpRequest)
 					.substring(httpRequest.getContextPath().length());
 			httpResponse.sendRedirect("userlogin!default.action?os_destination=" + destination);
@@ -259,8 +255,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		} catch (final Exception e) {
 			throw new IllegalStateException(e);
 		}
-		// return user != null
-		// &&
+		// return user != null &&
 		// com.atlassian.jira.component.ComponentAccessor.getPermissionManager().hasPermission(
 		// SYSTEM_ADMIN, (com.opensymphony.user.User) user);
 	}
@@ -300,8 +295,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		} catch (final Exception e) {
 			throw new IllegalStateException(e);
 		}
-		// return user != null
-		// &&
+		// return user != null &&
 		// com.atlassian.spring.container.ContainerManager.getComponent("permissionManager").
 		// isConfluenceAdministrator((com.opensymphony.user.User) user);
 	}
@@ -345,11 +339,9 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		} catch (final Exception e) {
 			throw new IllegalStateException(e);
 		}
-		// return user != null
-		// &&
+		// return user != null &&
 		// com.atlassian.spring.container.ContainerManager.getComponent("bambooPermissionManager").
-		// hasPermission(username, "ADMIN",
-		// GlobalApplicationSecureObject.INSTANCE);
+		// hasPermission(username, "ADMIN", GlobalApplicationSecureObject.INSTANCE);
 	}
 
 	private Object getUser(HttpServletRequest httpRequest) {
