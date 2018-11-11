@@ -56,6 +56,7 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 	private final boolean jira = isJira();
 	private final boolean confluence = isConfluence();
 	private final boolean bamboo = isBamboo();
+	private final boolean bitbucket = isBitbucket();
 
 	private final boolean jiraHasProperApplicationUserSupport = jira
 			&& hasJirasPermissionManagerApplicationUserSupport();
@@ -71,6 +72,8 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			return "Confluence";
 		} else if (bamboo) {
 			return "Bamboo";
+		} else if (bitbucket) {
+			return "Bitbucket";
 		}
 		return "?";
 	}
@@ -86,6 +89,8 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			logForDebug("JavaMelody is monitoring Confluence");
 		} else if (bamboo) {
 			logForDebug("JavaMelody is monitoring Bamboo");
+		} else if (bitbucket) {
+			logForDebug("JavaMelody is monitoring Bitbucket");
 		} else {
 			logForDebug(
 					"JavaMelody is monitoring unknown, access to monitoring reports is not secured by JavaMelody");
@@ -156,7 +161,9 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		return !PLUGIN_AUTHENTICATION_DISABLED
 				&& (jira && !checkJiraAdminPermission(httpRequest, httpResponse)
 						|| confluence && !checkConfluenceAdminPermission(httpRequest, httpResponse)
-						|| bamboo && !checkBambooAdminPermission(httpRequest, httpResponse));
+						|| bamboo && !checkBambooAdminPermission(httpRequest, httpResponse)
+				//						|| bitbucket && !checkBitbucketAdminPermission(httpRequest, httpResponse)
+				);
 	}
 
 	private boolean checkJiraAdminPermission(HttpServletRequest httpRequest,
@@ -221,6 +228,26 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		}
 		return true;
 	}
+
+	//	private boolean checkBitbucketAdminPermission(HttpServletRequest httpRequest,
+	//			HttpServletResponse httpResponse) throws IOException {
+	//		// only the administrator can view the monitoring report
+	//		final Object user = getUser(httpRequest);
+	//		if (user == null) {
+	//			// si non authentifié, on redirige vers la page de login en
+	//			// indiquant la page d'origine (sans le contexte) à afficher après le login
+	//			final String destination = getMonitoringUrl(httpRequest)
+	//					.substring(httpRequest.getContextPath().length());
+	//			httpResponse.sendRedirect("login?next=" + destination);
+	//			return false;
+	//		}
+	//		if (!hasBitbucketAdminPermission(user)) {
+	//			// si authentifié mais sans la permission admin, alors Forbidden
+	//			httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access");
+	//			return false;
+	//		}
+	//		return true;
+	//	}
 
 	private boolean hasJiraSystemAdminPermission(Object user) {
 		try {
@@ -344,6 +371,31 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		// hasPermission(username, "ADMIN", GlobalApplicationSecureObject.INSTANCE);
 	}
 
+	//	private static boolean hasBitbucketAdminPermission(Object user) {
+	//		try {
+	//			final Class<?> componentLocatorClass = Class
+	//					.forName("com.atlassian.sal.api.component.ComponentLocator");
+	//			final Class<?> userServiceClass = Class
+	//					.forName("com.atlassian.bitbucket.user.UserService");
+	//			// on travaille par réflexion car la compilation normale
+	//			// introduirait une dépendance
+	//			// trop compliquée et trop lourde à télécharger pour maven
+	//			final Object userService = componentLocatorClass.getMethod("getComponent", Class.class)
+	//					.invoke(null, userServiceClass);
+	//			final Class<?> applicationUserClass = Class
+	//					.forName("com.atlassian.bitbucket.user.ApplicationUser");
+	//			final Boolean result = (Boolean) userServiceClass
+	//					.getMethod("isUserInGroup", applicationUserClass, String.class)
+	//					.invoke(userService, user, "bitbucket-admin");
+	//			return result;
+	//		} catch (final Exception e) {
+	//			throw new IllegalStateException(e);
+	//		}
+	//		// return user != null &&
+	//		// com.atlassian.sal.api.component.ComponentLocator.getComponent(UserService.class).
+	//		// isUserInGroup(user, "bitbucket-admin");
+	//	}
+
 	private Object getUser(HttpServletRequest httpRequest) {
 		final HttpSession session = httpRequest.getSession(false);
 		return getUser(session);
@@ -399,6 +451,17 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 				user = userManager.getClass().getMethod("getUserByName", String.class)
 						.invoke(userManager, userName);
 			}
+			// for bitbucket, except that user is not yet known given the order of filters
+			//			} else if (bitbucket) {
+			//				final Class<?> componentLocatorClass = Class
+			//						.forName("com.atlassian.sal.api.component.ComponentLocator");
+			//				final Class<?> authenticationContextClass = Class
+			//						.forName("com.atlassian.bitbucket.auth.AuthenticationContext");
+			//				final Object authenticationContext = componentLocatorClass
+			//						.getMethod("getComponent", Class.class)
+			//						.invoke(null, authenticationContextClass);
+			//				user = authenticationContextClass.getMethod("getCurrentUser")
+			//						.invoke(authenticationContext);
 		} catch (final Exception e) {
 			throw new IllegalStateException(e);
 		}
@@ -431,6 +494,15 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 	private static boolean isBamboo() {
 		try {
 			Class.forName("com.atlassian.bamboo.security.BambooPermissionManager");
+			return true;
+		} catch (final ClassNotFoundException e) {
+			return false;
+		}
+	}
+
+	private static boolean isBitbucket() {
+		try {
+			Class.forName("com.atlassian.bitbucket.user.UserService");
 			return true;
 		} catch (final ClassNotFoundException e) {
 			return false;
