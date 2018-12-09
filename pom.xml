@@ -8,8 +8,8 @@
 	<version>1.75.0</version>
 	<packaging>jar</packaging>
 
-	<name>JIRA Confluence Bamboo JavaMelody Plugin</name>
-	<description>JavaMelody Monitoring in JIRA, Confluence or Bamboo.</description>
+	<name>JIRA Confluence Bamboo Bitbucket JavaMelody Plugin</name>
+	<description>JavaMelody Monitoring in JIRA, Confluence, Bamboo or Bitbucket.</description>
 	<url>https://github.com/javamelody/javamelody/wiki</url>
 	<inceptionYear>2008</inceptionYear>
 	<prerequisites>
