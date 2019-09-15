@@ -10,8 +10,9 @@
 		<param name="atlassian-data-center-compatible">true</param>
 	</plugin-info>
 
-	<!-- location="after-encoding" and weight="1" (and not location="before-decoration"
-		 and weight="200") for issue 23 when gzip compression is enabled in JIRA -->
+	<!-- location="before-decoration" weight="200" would fix the issue https://github.com/javamelody/jira-confluence-javamelody/issues/6
+	for RUM to inject javascript before the response is gzipped, but it would break the access to the monitoring page in bitbucket.
+	(The monitoring page would not be gzipped twice because gzip-compression-disabled below) -->
 	<servlet-filter name="MonitoringFilter" key="MonitoringFilter"
 		class="net.bull.javamelody.JiraMonitoringFilter" location="after-encoding"
 		weight="1">
