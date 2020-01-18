@@ -12,9 +12,6 @@
 	<description>JavaMelody Monitoring in JIRA, Confluence, Bamboo or Bitbucket.</description>
 	<url>https://github.com/javamelody/javamelody/wiki</url>
 	<inceptionYear>2008</inceptionYear>
-	<prerequisites>
-		<maven>3.0.4</maven>
-	</prerequisites>
 
 	<developers>
 		<developer>
