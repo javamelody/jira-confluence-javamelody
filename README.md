@@ -5,8 +5,6 @@ Plugin for JavaMelody to monitor performance in a  [JIRA](http://www.atlassian.c
 
 See https://github.com/javamelody/javamelody/wiki
 
-Continuous integration: https://javamelody.ci.cloudbees.com/job/jira-confluence-javamelody/
-
 License ASL, http://www.apache.org/licenses/LICENSE-2.0
 
 Please submit github pull requests and github issues.
