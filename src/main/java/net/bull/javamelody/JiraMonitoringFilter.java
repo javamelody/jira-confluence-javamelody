@@ -218,7 +218,9 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 			// indiquant la page d'origine (sans le contexte) à afficher après le login
 			final String destination = getMonitoringUrl(httpRequest)
 					.substring(httpRequest.getContextPath().length());
-			httpResponse.sendRedirect("userlogin!default.action?os_destination=" + destination);
+			// /userlogin!doDefault.action?os_destination=${originalurl} pour login.url dans seraph-config.xml
+			// au lieu de userlogin!doDefault.action?os_destination=${originalurl}, depuis Bamboo 6
+			httpResponse.sendRedirect("userlogin!doDefault.action?os_destination=" + destination);
 			return false;
 		}
 		if (!hasBambooAdminPermission(user)) {
