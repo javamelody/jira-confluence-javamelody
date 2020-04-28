@@ -1,4 +1,4 @@
-liferay-javamelody
+jira-confluence-javamelody
 =========================
 
 Plugin for JavaMelody to monitor performance in a  [JIRA](http://www.atlassian.com/software/jira/), [Confluence](http://www.atlassian.com/software/confluence/) or a [Bamboo](http://www.atlassian.com/software/bamboo/) server.
