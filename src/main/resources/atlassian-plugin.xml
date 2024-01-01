@@ -76,7 +76,7 @@
 			because icon is not displayed in JIRA 5 and because it causes an ERROR log 
 			for some screens such as project config. <icon height="16" width="16"> <link>/monitoring?resource=systemmonitor.png</link> 
 			</icon> -->
-		<label key="net.bull.javamelody.label">Monitoring</label>
+		<label key="net.bull.javamelody.label">Monitoring JavaMelody</label>
 		<link linkId="net.bull.javamelody.link">/monitoring</link>
 		<!-- Pour compatibilite avec Confluence, on ne met pas cette condition 
 			qui n'est pas necessaire si la section est system.admin/system <condition 
@@ -91,7 +91,7 @@
 		<icon height="16" width="16">
 			<link>/monitoring?resource=systemmonitor.png</link>
 		</icon>
-		<label key="net.bull.javamelody.label">Monitoring</label>
+		<label key="net.bull.javamelody.label">Monitoring JavaMelody</label>
 		<link linkId="net.bull.javamelody.link">/monitoring</link>
 	</web-item>
 </atlassian-plugin>
