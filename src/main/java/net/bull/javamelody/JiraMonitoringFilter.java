@@ -17,6 +17,8 @@
  */
 package net.bull.javamelody;
 
+import com.atlassian.annotations.security.UnrestrictedAccess;
+
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Arrays;
@@ -32,24 +34,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /**
- * Filter of monitoring JavaMelody for JIRA/Bamboo/Confluence with security
- * check for system administrator.
+ * Filter of monitoring JavaMelody without report.
  * @author Emeric Vernat
  */
+@UnrestrictedAccess
 public class JiraMonitoringFilter extends PluginMonitoringFilter {
-	private static final boolean PLUGIN_AUTHENTICATION_DISABLED = Parameter.PLUGIN_AUTHENTICATION_DISABLED
-			.getValueAsBoolean();
-	// valeur de com.atlassian.jira.security.Permissions.SYSTEM_ADMIN
-	private static final int SYSTEM_ADMIN = 44;
 	// valeur de DefaultAuthenticator.LOGGED_IN_KEY
 	private static final String LOGGED_IN_KEY = "seraph_defaultauthenticator_user";
-	private static final List<String> JIRA_USER_CLASSES = Arrays.asList(
-			// since JIRA 6, but exists in JIRA 5.2:
-			"com.atlassian.jira.user.ApplicationUser",
-			// since JIRA 5:
-			"com.atlassian.crowd.embedded.api.User",
-			// before JIRA 5:
-			"com.opensymphony.user.User");
 
 	// initialisation ici et non dans la méthode init, car on ne sait pas très
 	// bien quand la méthode init serait appelée dans les systèmes de plugins
@@ -57,11 +48,6 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 	private final boolean confluence = isConfluence();
 	private final boolean bamboo = isBamboo();
 	private final boolean bitbucket = isBitbucket();
-
-	private final boolean jiraHasProperApplicationUserSupport = jira
-			&& hasJirasPermissionManagerApplicationUserSupport();
-
-	private boolean confluenceGetUserByNameExists = true; // on suppose true au départ
 
 	/** {@inheritDoc} */
 	@Override
@@ -92,16 +78,12 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		} else if (bitbucket) {
 			logForDebug("JavaMelody is monitoring Bitbucket");
 		} else {
-			logForDebug(
-					"JavaMelody is monitoring unknown, access to monitoring reports is not secured by JavaMelody");
-		}
-		if (PLUGIN_AUTHENTICATION_DISABLED) {
-			logForDebug("Authentication for monitoring reports has been disabled");
+			logForDebug("JavaMelody is monitoring unknown");
 		}
 
 		// add atlassian maven public repository for atlassian sources
 		final String mavenRepositories = System.getProperty("user.home")
-				+ "/.m2/repository,http://repo1.maven.org/maven2,https://maven.atlassian.com/maven-public";
+				+ "/.m2/repository,http://repo1.maven.org/maven2,https://maven.artifacts.atlassian.com/";
 		Parameter.MAVEN_REPOSITORIES.setValue(mavenRepositories);
 
 		final String analyticsDisabled = "javamelody.analytics-disabled";
@@ -121,15 +103,15 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		}
 		final HttpServletRequest httpRequest = (HttpServletRequest) request;
 		final HttpServletResponse httpResponse = (HttpServletResponse) response;
-
+		
 		if (httpRequest.getRequestURI().equals(getMonitoringUrl(httpRequest))) {
 			if (isRumMonitoring(httpRequest, httpResponse)) {
 				return;
 			}
 
-			if (hasNotPermission(httpRequest, httpResponse)) {
-				return;
-			}
+			// monitoring page is done in JiraReportFilter for system admins, not here
+			chain.doFilter(request, response);
+			return;
 		}
 
 		putRemoteUserInSession(httpRequest);
@@ -140,10 +122,9 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 	private void putRemoteUserInSession(HttpServletRequest httpRequest) {
 		final HttpSession session = httpRequest.getSession(false);
 		if (session != null && session.getAttribute(SessionListener.SESSION_REMOTE_USER) == null) {
-			// si session null, la session n'est pas encore créée (et ne le sera
-			// peut-être jamais),
+			// si session null, la session n'est pas encore créée (et ne le sera peut-être jamais),
 			try {
-				final Object user = getUser(session);
+				final Object user = session.getAttribute(LOGGED_IN_KEY);
 				// objet utilisateur, peut être null
 				if (user instanceof Principal) {
 					final String remoteUser = ((Principal) user).getName();
@@ -156,331 +137,12 @@ public class JiraMonitoringFilter extends PluginMonitoringFilter {
 		}
 	}
 
-	private boolean hasNotPermission(HttpServletRequest httpRequest,
-			HttpServletResponse httpResponse) throws IOException {
-		return !PLUGIN_AUTHENTICATION_DISABLED
-				&& (jira && !checkJiraAdminPermission(httpRequest, httpResponse)
-						|| confluence && !checkConfluenceAdminPermission(httpRequest, httpResponse)
-						|| bamboo && !checkBambooAdminPermission(httpRequest, httpResponse)
-				//						|| bitbucket && !checkBitbucketAdminPermission(httpRequest, httpResponse)
-				);
-	}
-
-	private boolean checkJiraAdminPermission(HttpServletRequest httpRequest,
-			HttpServletResponse httpResponse) throws IOException {
-		// only the administrator can view the monitoring report
-		final Object user = getUser(httpRequest);
-		if (user == null) {
-			// si non authentifié, on redirige vers la page de login en
-			// indiquant la page
-			// d'origine (sans le contexte) à afficher après le login
-			final String destination = getMonitoringUrl(httpRequest)
-					.substring(httpRequest.getContextPath().length());
-			httpResponse.sendRedirect("login.jsp?os_destination=" + destination);
-			return false;
-		}
-		if (!hasJiraSystemAdminPermission(user)) {
-			// si authentifié mais sans la permission system admin, alors
-			// Forbidden
-			httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access");
-			return false;
-		}
-		return true;
-	}
-
-	private boolean checkConfluenceAdminPermission(HttpServletRequest httpRequest,
-			HttpServletResponse httpResponse) throws IOException {
-		// only the administrator can view the monitoring report
-		final Object user = getUser(httpRequest);
-		if (user == null) {
-			// si non authentifié, on redirige vers la page de login en
-			// indiquant la page d'origine (sans le contexte) à afficher après le login
-			final String destination = getMonitoringUrl(httpRequest)
-					.substring(httpRequest.getContextPath().length());
-			httpResponse.sendRedirect("login.action?os_destination=" + destination);
-			return false;
-		}
-		if (!hasConfluenceAdminPermission(user)) {
-			// si authentifié mais sans la permission system admin, alors
-			// Forbidden
-			httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access");
-			return false;
-		}
-		return true;
-	}
-
-	private boolean checkBambooAdminPermission(HttpServletRequest httpRequest,
-			HttpServletResponse httpResponse) throws IOException {
-		// only the administrator can view the monitoring report
-		final Object user = getUser(httpRequest);
-		if (user == null) {
-			// si non authentifié, on redirige vers la page de login en
-			// indiquant la page d'origine (sans le contexte) à afficher après le login
-			final String destination = getMonitoringUrl(httpRequest)
-					.substring(httpRequest.getContextPath().length());
-			// /userlogin!doDefault.action?os_destination=${originalurl} pour login.url dans seraph-config.xml
-			// au lieu de userlogin!doDefault.action?os_destination=${originalurl}, depuis Bamboo 6
-			httpResponse.sendRedirect("userlogin!doDefault.action?os_destination=" + destination);
-			return false;
-		}
-		if (!hasBambooAdminPermission(user)) {
-			// si authentifié mais sans la permission admin, alors Forbidden
-			httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access");
-			return false;
-		}
-		return true;
-	}
-
-	//	private boolean checkBitbucketAdminPermission(HttpServletRequest httpRequest,
-	//			HttpServletResponse httpResponse) throws IOException {
-	//		// only the administrator can view the monitoring report
-	//		final Object user = getUser(httpRequest);
-	//		if (user == null) {
-	//			// si non authentifié, on redirige vers la page de login en
-	//			// indiquant la page d'origine (sans le contexte) à afficher après le login
-	//			final String destination = getMonitoringUrl(httpRequest)
-	//					.substring(httpRequest.getContextPath().length());
-	//			httpResponse.sendRedirect("login?next=" + destination);
-	//			return false;
-	//		}
-	//		if (!hasBitbucketAdminPermission(user)) {
-	//			// si authentifié mais sans la permission admin, alors Forbidden
-	//			httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access");
-	//			return false;
-	//		}
-	//		return true;
-	//	}
-
-	private boolean hasJiraSystemAdminPermission(Object user) {
-		try {
-			final Class<?> componentAccessorClass = Class
-					.forName("com.atlassian.jira.component.ComponentAccessor");
-			// on travaille par réflexion car la compilation normale
-			// introduirait une dépendance
-			// trop compliquée et trop lourde à télécharger pour maven
-			// Note : si getPermissionManager().hasPermission est supprimée,
-			// il faudra utiliser getGlobalPermissionManager().hasPermission
-			// (Since v6.2.5)
-			final Object permissionManager = componentAccessorClass
-					.getMethod("getPermissionManager").invoke(null);
-
-			Exception firstException = null;
-			// selon la version de JIRA, on essaye les différentes classes
-			// possibles du user
-			for (final String className : JIRA_USER_CLASSES) {
-				try {
-					final Class<?> userClass = Class.forName(className);
-					return (Boolean) permissionManager.getClass()
-							.getMethod("hasPermission", Integer.TYPE, userClass)
-							.invoke(permissionManager, SYSTEM_ADMIN, user);
-				} catch (final Exception e) {
-					if (firstException == null) {
-						firstException = e;
-					}
-				}
-			}
-			// aucune classe n'a fonctionné
-			throw firstException;
-		} catch (final Exception e) {
-			throw new IllegalStateException(e);
-		}
-		// return user != null &&
-		// com.atlassian.jira.component.ComponentAccessor.getPermissionManager().hasPermission(
-		// SYSTEM_ADMIN, (com.opensymphony.user.User) user);
-	}
-
-	private static boolean hasJirasPermissionManagerApplicationUserSupport() {
-		try {
-			final Class<?> componentAccessorClass = Class
-					.forName("com.atlassian.jira.component.ComponentAccessor");
-			final Object permissionManager = componentAccessorClass
-					.getMethod("getPermissionManager").invoke(null);
-			// since JIRA 5.1.1
-			final Class<?> applicationUserClass = Class
-					.forName("com.atlassian.jira.user.ApplicationUser");
-			// since JIRA 6.0
-			permissionManager.getClass().getMethod("hasPermission", Integer.TYPE,
-					applicationUserClass);
-			return true;
-		} catch (final Exception e) {
-			return false;
-		}
-	}
-
-	private static boolean hasConfluenceAdminPermission(Object user) {
-		try {
-			final Class<?> containerManagerClass = Class
-					.forName("com.atlassian.spring.container.ContainerManager");
-			final Class<?> userClass = Class.forName("com.atlassian.user.User");
-			// on travaille par réflexion car la compilation normale
-			// introduirait une dépendance
-			// trop compliquée et trop lourde à télécharger pour maven
-			final Object permissionManager = containerManagerClass
-					.getMethod("getComponent", String.class).invoke(null, "permissionManager");
-			final Boolean result = (Boolean) permissionManager.getClass()
-					.getMethod("isConfluenceAdministrator", userClass)
-					.invoke(permissionManager, user);
-			return result;
-		} catch (final Exception e) {
-			throw new IllegalStateException(e);
-		}
-		// return user != null &&
-		// com.atlassian.spring.container.ContainerManager.getComponent("permissionManager").
-		// isConfluenceAdministrator((com.opensymphony.user.User) user);
-	}
-
-	private static boolean hasBambooAdminPermission(Object user) {
-		try {
-			final Class<?> containerManagerClass = Class
-					.forName("com.atlassian.spring.container.ContainerManager");
-			// on travaille par réflexion car la compilation normale
-			// introduirait une dépendance
-			// trop compliquée et trop lourde à télécharger pour maven
-			final Object bambooPermissionManager = containerManagerClass
-					.getMethod("getComponent", String.class)
-					.invoke(null, "bambooPermissionManager");
-			final String userName;
-			if (user instanceof Principal) {
-				// for Bamboo 6+ (issue 671)
-				userName = ((Principal) user).getName();
-			} else {
-				userName = user.toString();
-			}
-
-			Boolean result;
-			try {
-				// since Bamboo 3.1 (issue 192):
-				result = (Boolean) bambooPermissionManager.getClass()
-						.getMethod("isSystemAdmin", String.class)
-						.invoke(bambooPermissionManager, userName);
-			} catch (final NoSuchMethodException e) {
-				// before Bamboo 3.1 (issue 192):
-				final Class<?> globalApplicationSecureObjectClass = Class
-						.forName("com.atlassian.bamboo.security.GlobalApplicationSecureObject");
-				final Object globalApplicationSecureObject = globalApplicationSecureObjectClass
-						.getField("INSTANCE").get(null);
-				result = (Boolean) bambooPermissionManager.getClass()
-						.getMethod("hasPermission", String.class, String.class, Object.class)
-						.invoke(bambooPermissionManager, userName, "ADMIN",
-								globalApplicationSecureObject);
-			}
-			return result;
-		} catch (final Exception e) {
-			throw new IllegalStateException(e);
-		}
-		// return user != null &&
-		// com.atlassian.spring.container.ContainerManager.getComponent("bambooPermissionManager").
-		// hasPermission(username, "ADMIN", GlobalApplicationSecureObject.INSTANCE);
-	}
-
-	//	private static boolean hasBitbucketAdminPermission(Object user) {
-	//		try {
-	//			final Class<?> componentLocatorClass = Class
-	//					.forName("com.atlassian.sal.api.component.ComponentLocator");
-	//			final Class<?> userServiceClass = Class
-	//					.forName("com.atlassian.bitbucket.user.UserService");
-	//			// on travaille par réflexion car la compilation normale
-	//			// introduirait une dépendance
-	//			// trop compliquée et trop lourde à télécharger pour maven
-	//			final Object userService = componentLocatorClass.getMethod("getComponent", Class.class)
-	//					.invoke(null, userServiceClass);
-	//			final Class<?> applicationUserClass = Class
-	//					.forName("com.atlassian.bitbucket.user.ApplicationUser");
-	//			final Boolean result = (Boolean) userServiceClass
-	//					.getMethod("isUserInGroup", applicationUserClass, String.class)
-	//					.invoke(userService, user, "bitbucket-admin");
-	//			return result;
-	//		} catch (final Exception e) {
-	//			throw new IllegalStateException(e);
-	//		}
-	//		// return user != null &&
-	//		// com.atlassian.sal.api.component.ComponentLocator.getComponent(UserService.class).
-	//		// isUserInGroup(user, "bitbucket-admin");
-	//	}
-
-	private Object getUser(HttpServletRequest httpRequest) {
-		final HttpSession session = httpRequest.getSession(false);
-		return getUser(session);
-	}
-
-	private Object getUser(HttpSession session) {
-		// ceci fonctionne dans JIRA et dans Confluence (et Bamboo ?)
-		if (session == null) {
-			return null;
-		}
-		Object user = session.getAttribute(LOGGED_IN_KEY);
-		try {
-			if (confluence) {
-				if (user != null && "com.atlassian.confluence.user.SessionSafePrincipal"
-						.equals(user.getClass().getName())) {
-					// since confluence 4.1.4 (or 4.1.?)
-					final String userName = user.toString();
-					// note: httpRequest.getRemoteUser() null in general
-					final Class<?> containerManagerClass = Class
-							.forName("com.atlassian.spring.container.ContainerManager");
-					final Object userAccessor = containerManagerClass
-							.getMethod("getComponent", String.class).invoke(null, "userAccessor");
-					user = userAccessor.getClass().getMethod("getUser", String.class)
-							.invoke(userAccessor, userName);
-				} else if (user instanceof Principal && confluenceGetUserByNameExists) {
-					// since confluence 5.2 or 5.3
-					final String userName = ((Principal) user).getName();
-					final Class<?> containerManagerClass = Class
-							.forName("com.atlassian.spring.container.ContainerManager");
-					final Object userAccessor = containerManagerClass
-							.getMethod("getComponent", String.class).invoke(null, "userAccessor");
-					// getUser deprecated, use getUserByName as said in:
-					// https://docs.atlassian.com/atlassian-confluence/5.3.1/com/atlassian/confluence/user/UserAccessor.html
-					try {
-						user = userAccessor.getClass().getMethod("getUserByName", String.class)
-								.invoke(userAccessor, userName);
-					} catch (final NoSuchMethodException e) {
-						// getUserByName does not exist in old Confluence
-						// versions (3.5.13 for example)
-						confluenceGetUserByNameExists = false;
-					}
-				}
-			} else if (jiraHasProperApplicationUserSupport && user instanceof Principal
-					&& !Class.forName("com.atlassian.jira.user.ApplicationUser").isInstance(user)) {
-				// "user" may not be of the correct class, e.g. when a custom authenticator sets a Principal
-				// which is NOT an ApplicationUser.
-				// for JIRA 6+, convert it to an ApplicationUser (PR #2)
-				final Class<?> componentAccessorClass = Class
-						.forName("com.atlassian.jira.component.ComponentAccessor");
-				final Object userManager = componentAccessorClass.getMethod("getUserManager")
-						.invoke(null);
-				final String userName = ((Principal) user).getName();
-				user = userManager.getClass().getMethod("getUserByName", String.class)
-						.invoke(userManager, userName);
-			}
-			// for bitbucket, except that user is not yet known given the order of filters
-			//			} else if (bitbucket) {
-			//				final Class<?> componentLocatorClass = Class
-			//						.forName("com.atlassian.sal.api.component.ComponentLocator");
-			//				final Class<?> authenticationContextClass = Class
-			//						.forName("com.atlassian.bitbucket.auth.AuthenticationContext");
-			//				final Object authenticationContext = componentLocatorClass
-			//						.getMethod("getComponent", Class.class)
-			//						.invoke(null, authenticationContextClass);
-			//				user = authenticationContextClass.getMethod("getCurrentUser")
-			//						.invoke(authenticationContext);
-		} catch (final Exception e) {
-			throw new IllegalStateException(e);
-		}
-		return user;
-	}
-
 	private static boolean isJira() {
 		try {
 			Class.forName("com.atlassian.jira.component.ComponentAccessor");
 			return true;
 		} catch (final ClassNotFoundException e) {
-			try {
-				Class.forName("com.atlassian.jira.ManagerFactory");
-				return true;
-			} catch (final ClassNotFoundException e2) {
-				return false;
-			}
+			return false;
 		}
 	}
 

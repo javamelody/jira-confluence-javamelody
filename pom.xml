@@ -51,8 +51,37 @@
 	<properties>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<platform.version>7.2.3</platform.version>
 	</properties>
 
+	<repositories>
+		<repository>
+			<id>atlassian</id>
+			<name>Atlassian Maven Repository</name>
+			<url>https://maven.artifacts.atlassian.com/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+ 	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.atlassian.platform.dependencies</groupId>
+				<artifactId>platform-public-api</artifactId>
+				<version>${platform.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.atlassian.platform.dependencies</groupId>
+				<artifactId>platform-deprecated-public-api</artifactId>
+				<version>${platform.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>net.bull.javamelody</groupId>
@@ -82,6 +111,11 @@
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
 			<version>4.0.1</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.atlassian.annotations</groupId>
+			<artifactId>atlassian-annotations</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<!-- Dépendance JUnit -->

@@ -19,18 +19,20 @@
 		key="MonitoringFilter"
 		class="net.bull.javamelody.JiraMonitoringFilter"
 		location="after-encoding" weight="1">
-		<description>Monitoring Filter.</description>
+		<description>Monitoring Filter</description>
 		<url-pattern>/*</url-pattern>
 		<init-param>
 			<param-name>http-transform-pattern</param-name>
 			<!-- URLs are aggregated if contain an issue number (jira) or a build 
 				number (bamboo) like "-xxx", if contain a fixforversion number like "/fixforversion/xxx" 
-				(jira), if contain an attachment name like "/attachment/xxx/abcdef" (jira), 
-				if contain a component number like "/component/xxx" (jira), if contain a 
-				label like "/label/xxx" (confluence), if contain "/x/ABCDEF" (confluence), 
+				(jira), if contain an attachment name like "/attachment/xxx/abcdef" (jira),
+				if contain a component number like "/component/xxx" (jira), if contain /s/ (jira),
+				if contain an attachment name like "/spaces/ds/pages/xxxx/ABCDEF" (confluence),
+				if contain an attachment name like "/download/attachments/xxx/abcdef" (confluence),
+				if contain a label like "/label/xxx" (confluence), if contain "/x/ABCDEF" (confluence),
 				if contain an unit test name like "/test/abcdef" (bamboo), or if contain 
 				an artifact name like "/artifact/abcdef" (bamboo) -->
-			<param-value>-\d+|/\d+|chment/.+|onent/.+|abel/.+|/x/.+|est/.+|ifact/.+</param-value>
+			<param-value>-\d+|/\d+ |/\d+/|(?&lt;=/s/).+|(?&lt;=/attachment/).+|(?&lt;=/component/).+|(?&lt;=/attachments/).+|(?&lt;=/label/).+|(?&lt;=/x/).+|(?&lt;=/test/).+|(?&lt;=/artifact/).+</param-value>
 		</init-param>
 		<init-param>
 			<!-- gzip is now enabled by default in JIRA, since 6.4.x ? -->
@@ -51,11 +53,18 @@
 			<param-value>true</param-value>
 		</init-param>
 	</servlet-filter>
+	<servlet-filter name="ReportFilter"
+					key="ReportFilter"
+					class="net.bull.javamelody.JiraReportFilter"
+					location="before-decoration" weight="1">
+		<description>Report Filter</description>
+		<url-pattern>/monitoring*</url-pattern>
+	</servlet-filter>
 
 	<servlet-context-listener
 		name="SessionListener" key="SessionListener"
 		class="net.bull.javamelody.SessionListener">
-		<description>Monitoring Session Listener.</description>
+		<description>Monitoring Session Listener</description>
 	</servlet-context-listener>
 
 	<resource type="i18n" name="i18n" location="javamelody_i18n" />
