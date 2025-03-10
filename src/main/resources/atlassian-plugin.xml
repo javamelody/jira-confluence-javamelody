@@ -60,6 +60,12 @@
 		<description>Report Filter</description>
 		<url-pattern>/monitoring*</url-pattern>
 	</servlet-filter>
+	<servlet name="ReportServlet"
+			 key="ReportServlet"
+			 class="net.bull.javamelody.JiraReportServlet">
+		<description>Report Servlet</description>
+		<url-pattern>/monitoring*</url-pattern>
+	</servlet>
 
 	<servlet-context-listener
 		name="SessionListener" key="SessionListener"
