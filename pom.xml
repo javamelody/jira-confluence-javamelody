@@ -6,7 +6,7 @@
 
 	<groupId>net.bull.javamelody</groupId>
 	<artifactId>jira-confluence-javamelody</artifactId>
-	<version>1.99.4</version>
+	<version>2.6.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>JIRA Confluence Bamboo Bitbucket JavaMelody Plugin</name>
@@ -108,9 +108,9 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
-			<version>4.0.1</version>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<version>5.0.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -130,7 +130,7 @@
 		<dependency>
 			<groupId>org.easymock</groupId>
 			<artifactId>easymock</artifactId>
-			<version>3.1</version>
+			<version>5.5.0</version>
 			<!-- Utilisée uniquement pour l'exécution des tests unitaires -->
 			<scope>test</scope>
 		</dependency>
@@ -146,30 +146,15 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.6.1</version>
+				<version>3.14.1</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.0.2</version>
-				<configuration>
-					<archive>
-						<manifestEntries>
-							<Implementation-Title>${project.name}</Implementation-Title>
-							<Implementation-Version>${project.version}</Implementation-Version>
-							<Implementation-Vendor>Emeric Vernat</Implementation-Vendor>
-							<!-- Override user.name in Built-By -->
-							<Built-By>Emeric Vernat</Built-By>
-						</manifestEntries>
-					</archive>
+					<source>11</source>
+					<target>11</target>
 				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.0.0</version>
+				<version>3.6.1</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -181,7 +166,21 @@
 							<transformers>
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
-									<resource>META-INF/web-fragment.xml</resource>
+									<resources>
+										<resource>META-INF/web-fragment.xml</resource>
+										<resource>META-INF/MANIFEST.MF</resource>
+										<resource>com/lowagie/text/pdf/fonts/cmap_info.txt</resource>
+									</resources>
+								</transformer>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<manifestEntries>
+										<Implementation-Title>${project.name}</Implementation-Title>
+										<Implementation-Version>${project.version}</Implementation-Version>
+										<Implementation-Vendor>Emeric Vernat</Implementation-Vendor>
+										<!-- Override user.name in Built-By -->
+										<Built-By>Emeric Vernat</Built-By>
+									</manifestEntries>
 								</transformer>
 							</transformers>
 							<relocations>

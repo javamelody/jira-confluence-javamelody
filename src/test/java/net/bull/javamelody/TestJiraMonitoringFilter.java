@@ -27,18 +27,18 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.junit.After;
 import org.junit.Before;
@@ -69,9 +69,7 @@ public class TestJiraMonitoringFilter { // NOPMD
 			final Field field = MonitoringFilter.class.getDeclaredField("instanceCreated");
 			field.setAccessible(true);
 			field.set(null, false);
-		} catch (final IllegalAccessException e) {
-			throw new IllegalStateException(e);
-		} catch (final NoSuchFieldException e) {
+		} catch (final IllegalAccessException | NoSuchFieldException e) {
 			throw new IllegalStateException(e);
 		}
 		config = createNiceMock(FilterConfig.class);
@@ -181,7 +179,7 @@ public class TestJiraMonitoringFilter { // NOPMD
 		expect(request.getRequestURI()).andReturn("/test/monitoring").anyTimes();
 		expect(request.getContextPath()).andReturn(CONTEXT_PATH).anyTimes();
 		expect(request.getHeaders("Accept-Encoding"))
-				.andReturn(Collections.enumeration(Arrays.asList("text/html"))).anyTimes();
+				.andReturn(Collections.enumeration(List.of("text/html"))).anyTimes();
 		if (session != null) {
 			expect(request.isRequestedSessionIdValid()).andReturn(Boolean.TRUE).anyTimes();
 			expect(request.getSession(false)).andReturn(session).anyTimes();
