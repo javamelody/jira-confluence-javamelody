@@ -1,7 +1,10 @@
 jira-confluence-javamelody
 =========================
 
-Plugin for JavaMelody to monitor performance in a  [JIRA](http://www.atlassian.com/software/jira/), [Confluence](http://www.atlassian.com/software/confluence/) or a [Bamboo](http://www.atlassian.com/software/bamboo/) server.
+Plugin for JavaMelody to monitor performance in a  [JIRA](http://www.atlassian.com/software/jira/),
+[Confluence](http://www.atlassian.com/software/confluence/),
+[Bamboo](http://www.atlassian.com/software/bamboo/)
+or a [Bitbucket](https://www.atlassian.com/software/bitbucket) server.
 
 See https://github.com/javamelody/javamelody/wiki
 
